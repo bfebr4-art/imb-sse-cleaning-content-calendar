@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE Cleaning - Content Calendar Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Variables for Theme */
+        :root {
+            --primary: #123458;
+            --secondary: #1F7A8C;
+            --accent: #16A34A;
+            --bg-main: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --border: #E5E7EB;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --transition: all 0.2s ease-in-out;
+            
+            /* Pillar Colors */
+            --pillar-trust-bg: #E0E7FF; --pillar-trust-text: #3730A3;
+            --pillar-edu-bg: #FEF3C7; --pillar-edu-text: #92400E;
+            --pillar-bna-bg: #DCFCE7; --pillar-bna-text: #166534;
+            --pillar-proof-bg: #F3E8FF; --pillar-proof-text: #6B21A8;
+            --pillar-promo-bg: #FEE2E2; --pillar-promo-text: #991B1B;
+            --pillar-comm-bg: #E0F2FE; --pillar-comm-text: #075985;
+            
+            /* Status Colors */
+            --status-planned-bg: #F3F4F6; --status-planned-text: #374151;
+            --status-drafting-bg: #FEF3C7; --status-drafting-text: #92400E;
+            --status-design-bg: #E0E7FF; --status-design-text: #3730A3;
+            --status-sched-bg: #DBEAFE; --status-sched-text: #1E40AF;
+            --status-pub-bg: #DCFCE7; --status-pub-text: #166534;
+        }
+
+        /* Reset & Base Styles */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Typography */
+        h1 { font-size: 2.25rem; font-weight: 700; color: var(--primary); letter-spacing: -0.025em; }
+        h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--primary); }
+        h3 { font-size: 1rem; font-weight: 600; color: var(--text-main); }
+        p { color: var(--text-muted); font-size: 0.875rem; }
+
+        /* Utility Classes */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .flex { display: flex; }
+        .flex-col { display: flex; flex-direction: column; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .grid { display: grid; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        /* Section 1: Header */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo-placeholder {
+            width: 120px;
+            height: 120px;
+            background-color: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+        .meta-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .meta-item label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+        .meta-item span { font-weight: 500; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .kpi-card {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .kpi-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+
+        /* Progress Bars */
+        .progress-container { margin-bottom: 1rem; }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500;}
+        .progress-track { width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 4px; }
+
+        /* Calendar */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+        .calendar-day-header {
+            text-align: center; font-weight: 600; font-size: 0.75rem;
+            text-transform: uppercase; color: var(--text-muted);
+            padding: 0.5rem;
+        }
+        .calendar-day {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            position: relative;
+        }
+        .calendar-day:hover:not(.empty) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--secondary);
+            z-index: 10;
+        }
+        .calendar-day:not(.empty) { cursor: pointer; }
+        .calendar-day.empty { background: transparent; border: none; }
+        .day-number { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.5rem; color: var(--primary); }
+        .day-content { font-size: 0.75rem; flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+        .day-topic { font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .day-format { color: var(--text-muted); font-size: 0.7rem; }
+
+        /* Data Table */
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; }
+        .search-box {
+            padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
+            width: 300px; font-family: inherit; font-size: 0.875rem;
+        }
+        .filter-select {
+            padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-md);
+            font-family: inherit; font-size: 0.875rem; background: white;
+        }
+        .action-btn {
+            padding: 0.5rem 1rem; background: var(--primary); color: white; border: none;
+            border-radius: var(--radius-md); font-weight: 500; cursor: pointer; transition: var(--transition);
+            font-family: inherit; font-size: 0.875rem;
+        }
+        .action-btn:hover { background: var(--secondary); }
+        
+        .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: white; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+        thead th {
+            position: sticky; top: 0; background: var(--bg-main); color: var(--text-muted);
+            font-weight: 600; text-transform: uppercase; font-size: 0.75rem; padding: 1rem;
+            border-bottom: 1px solid var(--border); z-index: 5;
+        }
+        tbody tr { border-bottom: 1px solid var(--border); transition: var(--transition); }
+        tbody tr:hover { background-color: #F8FAFC; }
+        td { padding: 1rem; vertical-align: top; }
+        .col-date { white-space: nowrap; font-weight: 500; }
+        .col-visual { min-width: 200px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; white-space: pre-wrap; }
+        .col-caption { min-width: 250px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; }
+        .col-topic { font-weight: 500; color: var(--text-main); }
+
+        /* Interactive Elements Styles */
+        .status-select {
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            border: 1px solid transparent;
+            outline: none;
+            font-family: inherit;
+            padding-right: 1.5rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='currentColor' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            transition: var(--transition);
+        }
+        .status-select:hover { opacity: 0.9; box-shadow: var(--shadow-sm); }
+        
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(18, 52, 88, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: var(--transition);
+        }
+        .modal-backdrop.show { opacity: 1; visibility: visible; }
+        .modal {
+            background: white; border-radius: var(--radius-lg);
+            width: 90%; max-width: 600px; max-height: 90vh;
+            overflow-y: auto; box-shadow: var(--shadow-lg);
+            transform: translateY(20px); transition: var(--transition);
+            display: flex; flex-direction: column;
+        }
+        .modal-backdrop.show .modal { transform: translateY(0); }
+        .modal-header {
+            padding: 1.5rem; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: flex-start;
+            position: sticky; top: 0; background: white; z-index: 10;
+        }
+        .modal-close {
+            background: none; border: none; font-size: 1.5rem; line-height: 1;
+            cursor: pointer; color: var(--text-muted); padding: 0.25rem;
+        }
+        .modal-close:hover { color: var(--text-main); }
+        .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+        .modal-section-title { font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .modal-text { font-size: 0.875rem; color: var(--text-main); line-height: 1.6; }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Colors for Pillars */
+        .pillar-Trust { background: var(--pillar-trust-bg); color: var(--pillar-trust-text); }
+        .pillar-Educational { background: var(--pillar-edu-bg); color: var(--pillar-edu-text); }
+        .pillar-BeforeAfter { background: var(--pillar-bna-bg); color: var(--pillar-bna-text); }
+        .pillar-SocialProof { background: var(--pillar-proof-bg); color: var(--pillar-proof-text); }
+        .pillar-Promotion { background: var(--pillar-promo-bg); color: var(--pillar-promo-text); }
+        .pillar-Community { background: var(--pillar-comm-bg); color: var(--pillar-comm-text); }
+
+        /* Colors for Statuses */
+        .status-Planned { background: var(--status-planned-bg); color: var(--status-planned-text); }
+        .status-Drafting { background: var(--status-drafting-bg); color: var(--status-drafting-text); }
+        .status-Designing { background: var(--status-design-bg); color: var(--status-design-text); }
+        .status-Scheduled { background: var(--status-sched-bg); color: var(--status-sched-text); }
+        .status-Published { background: var(--status-pub-bg); color: var(--status-pub-text); }
+
+        /* Print Mode (A3 Landscape) */
+        @media print {
+            @page { size: A3 landscape; margin: 15mm; }
+            body { padding: 0; background: white; font-size: 11px; }
+            .container { max-width: none; gap: 1.5rem; }
+            .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+            .print-hide { display: none !important; }
+            .calendar-day { min-height: 80px; }
+            .calendar-day:hover:not(.empty) { transform: none; box-shadow: none; border-color: var(--border); }
+            table { font-size: 10px; }
+            td { padding: 0.5rem; }
+            .col-visual, .col-caption { min-width: auto; }
+            .badge { border: 1px solid rgba(0,0,0,0.1); }
+            /* Ensure background colors print */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            /* Prevent table rows breaking */
+            tr { break-inside: avoid; }
+            thead { display: table-header-group; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- SECTION 1: HEADER -->
+        <header class="header-section">
+            <div>
+                <p style="color: var(--secondary); font-weight: 600; text-transform: uppercase; font-size: 0.875rem; letter-spacing: 0.05em;">Phase 1 – Marketing Foundation Sprint</p>
+                <h1>Content Calendar Dashboard</h1>
+                
+                <div class="meta-info">
+                    <div class="meta-item">
+                        <label>Client</label>
+                        <span>SSE Cleaning</span>
+                    </div>
+                    <div class="meta-item">
+                        <label>Location</label>
+                        <span>Kuching, Sarawak, Malaysia</span>
+                    </div>
+                    <div class="meta-item">
+                        <label>Month</label>
+                        <span>August 2026</span>
+                    </div>
+                    <div class="meta-item">
+                        <label>Prepared By</label>
+                        <span>Bagus Febriansyah (Digital Marketing Consultant)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="logo-placeholder">
+                <img src="SSE Logo (Currently).jpeg" alt="SSE Cleaning Logo" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">
+            </div>
+        </header>
+
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+            <!-- SECTION 2: MONTHLY SUMMARY -->
+            <div class="card">
+                <h2>Monthly Summary</h2>
+                <div class="kpi-grid">
+                    <div class="kpi-card card">
+                        <span class="kpi-label">Total Posts</span>
+                        <span class="kpi-value">31</span>
+                    </div>
+                    <div class="kpi-card card">
+                        <span class="kpi-label">Frequency</span>
+                        <span class="kpi-value">1 / Day</span>
+                    </div>
+                    <div class="kpi-card card" style="grid-column: span 2;">
+                        <span class="kpi-label">Main Objective</span>
+                        <span class="kpi-value" style="font-size: 1.1rem; margin-top: 0.25rem;">Build Trust & Authority</span>
+                    </div>
+                    <div class="kpi-card card" style="grid-column: span 2;">
+                        <span class="kpi-label">Platforms</span>
+                        <div class="flex gap-2" style="margin-top: 0.5rem;">
+                            <span class="badge" style="background: #E2E8F0; color: #1E293B;">Facebook</span>
+                            <span class="badge" style="background: #E2E8F0; color: #1E293B;">Instagram</span>
+                            <span class="badge" style="background: #E2E8F0; color: #1E293B;">TikTok</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3, 4, 6: DISTRIBUTION & FOCUS -->
+            <div class="flex-col gap-4">
+                <div class="card">
+                    <h2>Content Pillar Distribution</h2>
+                    <div class="progress-container">
+                        <div class="progress-header"><span>Trust (30%)</span><span>9 Posts</span></div>
+                        <div class="progress-track"><div class="progress-fill pillar-Trust" style="width: 30%;"></div></div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-header"><span>Educational (25%)</span><span>8 Posts</span></div>
+                        <div class="progress-track"><div class="progress-fill pillar-Educational" style="width: 25%;"></div></div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-header"><span>Before & After (15%)</span><span>5 Posts</span></div>
+                        <div class="progress-track"><div class="progress-fill pillar-BeforeAfter" style="width: 15%;"></div></div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-header"><span>Social Proof (15%)</span><span>5 Posts</span></div>
+                        <div class="progress-track"><div class="progress-fill pillar-SocialProof" style="width: 15%;"></div></div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-header"><span>Promotion (10%)</span><span>3 Posts</span></div>
+                        <div class="progress-track"><div class="progress-fill pillar-Promotion" style="width: 10%;"></div></div>
+                    </div>
+                    <div class="progress-container" style="margin-bottom: 0;">
+                        <div class="progress-header"><span>Community (5%)</span><span>1 Post</span></div>
+                        <div class="progress-track"><div class="progress-fill pillar-Community" style="width: 5%;"></div></div>
+                    </div>
+                </div>
+                
+                <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="card">
+                        <h2>Format</h2>
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+                            <li class="flex justify-between"><span>Carousel</span> <strong>10</strong></li>
+                            <li class="flex justify-between"><span>Reels/Video</span> <strong>12</strong></li>
+                            <li class="flex justify-between"><span>Single Image</span> <strong>9</strong></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h2>Weekly Focus</h2>
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+                            <li><strong style="color: var(--primary);">W1:</strong> Brand Awareness</li>
+                            <li><strong style="color: var(--primary);">W2:</strong> Cleaning Expertise</li>
+                            <li><strong style="color: var(--primary);">W3:</strong> Trust Building</li>
+                            <li><strong style="color: var(--primary);">W4:</strong> Promo & Community</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 8: MONTHLY CALENDAR -->
+        <div class="card">
+            <div class="flex justify-between items-center" style="margin-bottom: 1.5rem;">
+                <h2>August 2026 Calendar</h2>
+                <!-- SECTION 7: COLOR LEGEND -->
+                <div class="flex gap-2 flex-wrap justify-end">
+                    <span class="badge pillar-Trust">Trust</span>
+                    <span class="badge pillar-Educational">Educational</span>
+                    <span class="badge pillar-BeforeAfter">Before & After</span>
+                    <span class="badge pillar-SocialProof">Social Proof</span>
+                    <span class="badge pillar-Promotion">Promotion</span>
+                    <span class="badge pillar-Community">Community</span>
+                </div>
+            </div>
+            
+            <div class="calendar-grid">
+                <div class="calendar-day-header">Sun</div>
+                <div class="calendar-day-header">Mon</div>
+                <div class="calendar-day-header">Tue</div>
+                <div class="calendar-day-header">Wed</div>
+                <div class="calendar-day-header">Thu</div>
+                <div class="calendar-day-header">Fri</div>
+                <div class="calendar-day-header">Sat</div>
+                <!-- Calendar days injected via JS -->
+            </div>
+        </div>
+
+        <!-- SECTION 9: CONTENT PLANNER TABLE -->
+        <div class="card">
+            <h2>Detailed Content Planner</h2>
+            
+            <div class="table-controls print-hide">
+                <input type="text" id="searchInput" class="search-box" placeholder="Search topics or captions...">
+                <div class="flex gap-2">
+                    <select id="pillarFilter" class="filter-select">
+                        <option value="all">All Pillars</option>
+                        <option value="Trust">Trust</option>
+                        <option value="Educational">Educational</option>
+                        <option value="Before & After">Before & After</option>
+                        <option value="Social Proof">Social Proof</option>
+                        <option value="Promotion">Promotion</option>
+                        <option value="Community">Community</option>
+                    </select>
+                    <select id="formatFilter" class="filter-select">
+                        <option value="all">All Formats</option>
+                        <option value="Carousel">Carousel</option>
+                        <option value="Reels">Reels</option>
+                        <option value="Single Image">Single Image</option>
+                    </select>
+                    <button class="action-btn" onclick="window.print()">
+                        <svg style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Export / Print PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="plannerTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Pillar</th>
+                            <th>Format</th>
+                            <th>Topic & Hook</th>
+                            <th>Visual Guide / Asset</th>
+                            <th>Caption Brief & CTA</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Table rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECTION 10: FOOTER -->
+        <footer>
+            <p><strong>SSE Cleaning</strong> - Marketing Foundation Sprint Deliverable</p>
+            <p style="margin-top: 0.5rem; font-size: 0.75rem;">Prepared by Bagus Febriansyah, Digital Marketing Consultant | August 2026</p>
+        </footer>
+    </div>
+
+    <!-- Modal Template -->
+    <div id="content-modal" class="modal-backdrop print-hide" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <div class="flex gap-2 items-center" style="margin-bottom: 0.5rem;">
+                        <span id="modal-date" style="font-size: 0.875rem; font-weight: 600; color: var(--primary);"></span>
+                        <span id="modal-pillar" class="badge"></span>
+                    </div>
+                    <h2 id="modal-topic" style="margin: 0; font-size: 1.25rem;"></h2>
+                </div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-grid">
+                    <div>
+                        <div class="modal-section-title">Format</div>
+                        <div id="modal-format" class="modal-text" style="font-weight: 500;"></div>
+                    </div>
+                    <div>
+                        <div class="modal-section-title">Status</div>
+                        <div id="modal-status"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="modal-section-title">Hook</div>
+                    <div id="modal-hook" class="modal-text" style="font-style: italic;"></div>
+                </div>
+                <div>
+                    <div class="modal-section-title">Visual Guide</div>
+                    <div id="modal-visual" class="modal-text" style="white-space: pre-wrap;"></div>
+                </div>
+                <div>
+                    <div class="modal-section-title">Caption Brief</div>
+                    <div id="modal-caption" class="modal-text"></div>
+                </div>
+                <div class="modal-grid">
+                    <div>
+                        <div class="modal-section-title">Call to Action (CTA)</div>
+                        <div id="modal-cta" class="modal-text" style="font-weight: 500;"></div>
+                    </div>
+                    <div>
+                        <div class="modal-section-title">Asset Needed</div>
+                        <div id="modal-asset" class="modal-text"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="modal-section-title">Objective</div>
+                    <div id="modal-objective" class="modal-text"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Full dataset for August 2026 (31 Days)
+        const contentData = [
+            { date: "2026-08-01", pillar: "Trust", topic: "Introduction to SSE Cleaning Core Values", format: "Carousel", visual: "Slide 1: Logo & Title\nSlide 2: Professionalism\nSlide 3: Reliability\nSlide 4: Eco-friendly products", asset: "Canva Illustration", hook: "Why 500+ homes in Kuching trust us with their keys.", caption: "At SSE Cleaning, we don't just clean; we care for your space like our own. Swipe to see our 3 core promises to every client.", cta: "Follow Our Page", objective: "Brand Awareness", status: "Planned" },
+            { date: "2026-08-02", pillar: "Educational", topic: "How to Keep Your Bathroom Fresh Longer", format: "Reels", visual: "Fast-paced video of a cleaner demonstrating 3 simple daily habits (wiping mirror, squeegee shower, ventilating).", asset: "Need New Video", hook: "Tired of scrubbing the bathroom every weekend? Do these 3 things daily.", caption: "Maintain that freshly-cleaned feeling longer with these quick 3-minute daily habits.", cta: "Save this Post", objective: "Value Addition", status: "Planned" },
+            { date: "2026-08-03", pillar: "Before & After", topic: "Extreme Kitchen Grease Makeover", format: "Carousel", visual: "Slide 1: Split screen before/after.\nSlide 2: Close up of stove before.\nSlide 3: Close up of stove after.", asset: "Existing Before After", hook: "Thought this stove was ruined? Think again.", caption: "Tough grease is no match for our deep cleaning team. Look at this transformation in a local Kuching kitchen!", cta: "Book Now", objective: "Showcase Capability", status: "Planned" },
+            { date: "2026-08-04", pillar: "Social Proof", topic: "Client Testimonial: Busy Mom", format: "Single Image", visual: "Aesthetically pleasing quote graphic over a softly blurred clean living room background.", asset: "Canva Illustration", hook: "\"I finally have my weekends back!\"", caption: "Thank you Sarah for trusting us! We love giving busy parents their time back to spend with family instead of mopping.", cta: "WhatsApp Us", objective: "Build Trust", status: "Planned" },
+            { date: "2026-08-05", pillar: "Promotion", topic: "August First-Time Client Discount", format: "Single Image", visual: "Minimal promotional poster. Dark blue background, bold green text offering 15% off first deep clean.", asset: "Canva Illustration", hook: "New to SSE Cleaning? Let us welcome you properly.", caption: "Claim your 15% off for your first residential deep clean this August. Slots are filling up fast!", cta: "WhatsApp Us", objective: "Lead Gen", status: "Planned" },
+            { date: "2026-08-06", pillar: "Educational", topic: "The Danger of Hidden Dust Mites", format: "Carousel", visual: "Infographics showing where dust mites hide (mattress, sofa) and how professional vacuuming removes them.", asset: "Canva Illustration", hook: "You can't see them, but you're sleeping with them.", caption: "Regular sweeping isn't enough. Here is why professional upholstery vacuuming is crucial for your family's health.", cta: "Share with Friends", objective: "Educate & Pitch", status: "Planned" },
+            { date: "2026-08-07", pillar: "Trust", topic: "Meet the Team: Head Supervisor", format: "Reels", visual: "Short interview style video. Supervisor talking about their passion for cleaning and eye for detail.", asset: "Need New Video", hook: "Meet the person who ensures your home is spotless.", caption: "Say hi to Maria! With 5 years of experience, she leads our team with incredible attention to detail.", cta: "Comment Below", objective: "Humanize Brand", status: "Planned" },
+            { date: "2026-08-08", pillar: "Before & After", topic: "Office Carpet Restoration", format: "Reels", visual: "Satisfying time-lapse video of commercial carpet extraction machine cleaning a dirty path.", asset: "Need New Video", hook: "Wait for the satisfying dirt extraction at the end 🤤", caption: "Commercial carpets trap pounds of dirt. Watch our industrial extractors bring this office floor back to life.", cta: "Book Now", objective: "Showcase Capability", status: "Planned" },
+            { date: "2026-08-09", pillar: "Community", topic: "Kuching Weekend Vibes", format: "Single Image", visual: "Beautiful shot of a clean home interior with sunlight, with a cup of coffee on the table.", asset: "Stock Image", hook: "Happy Sunday, Kuching!", caption: "Nothing beats the feeling of waking up to a clean home on a Sunday morning. Enjoy your rest day!", cta: "Comment Below", objective: "Engagement", status: "Planned" },
+            { date: "2026-08-10", pillar: "Educational", topic: "Tools of the Trade: Microfiber vs Cotton", format: "Carousel", visual: "Comparison graphics showing how microfiber traps dirt while cotton just pushes it around.", asset: "Canva Illustration", hook: "Stop wiping your counters with cotton rags!", caption: "Why our team exclusively uses color-coded microfiber cloths. It's science, not just cleaning.", cta: "Save this Post", objective: "Authority", status: "Planned" },
+            { date: "2026-08-11", pillar: "Trust", topic: "Our Vetting Process for Cleaners", format: "Single Image", visual: "Checklist graphic showing: Background check, 2-week training, Shadowing, Quality checks.", asset: "Canva Illustration", hook: "Who is entering your home?", caption: "Your security is our priority. Every SSE Cleaning staff member goes through a rigorous 4-step vetting and training process.", cta: "Follow Our Page", objective: "Build Trust", status: "Planned" },
+            { date: "2026-08-12", pillar: "Social Proof", topic: "Commercial Client Highlight", format: "Carousel", visual: "Photos of a clean local cafe/office we service, with a quote from the manager.", asset: "Existing Team Photo", hook: "Why [Business Name] relies on us for their daily operations.", caption: "A clean workspace is a productive workspace. Proud to be the cleaning partner for local Kuching businesses.", cta: "WhatsApp Us", objective: "B2B Trust", status: "Planned" },
+            { date: "2026-08-13", pillar: "Before & After", topic: "Post-Renovation Dust Removal", format: "Single Image", visual: "Slider format or side-by-side. Dusty floor/window vs completely clear, shining surface.", asset: "Existing Before After", hook: "The renovation is done, but the mess isn't.", caption: "Post-renovation dust gets EVERYWHERE. Our specialized team handles the fine dust so you can move in safely.", cta: "Book Now", objective: "Niche Service Awareness", status: "Planned" },
+            { date: "2026-08-14", pillar: "Educational", topic: "Eco-Friendly Cleaning Products We Use", format: "Reels", visual: "Showcase of the green products used, showing them being safe around pets/kids.", asset: "Need New Video", hook: "Tough on dirt, safe for your pets.", caption: "We use hospital-grade, eco-friendly solutions that don't leave harsh chemical smells in your home.", cta: "Save this Post", objective: "Educate", status: "Planned" },
+            { date: "2026-08-15", pillar: "Promotion", topic: "Weekend Flash Promo: Upholstery", format: "Single Image", visual: "Graphic showing a clean sofa with a flash sale tag.", asset: "Canva Illustration", hook: "48-Hour Flash Sale: Sofa Deep Cleaning!", caption: "Spilled coffee? Pet odors? Get 20% off all upholstery cleaning booked this weekend.", cta: "WhatsApp Us", objective: "Sales", status: "Planned" },
+            { date: "2026-08-16", pillar: "Trust", topic: "Behind the Scenes: Morning Briefing", format: "Reels", visual: "Candid video of the team prepping equipment, laughing, and getting ready for the day in uniform.", asset: "Need New Video", hook: "How we start our day at SSE Cleaning.", caption: "Preparation is key. Checking equipment, reviewing client notes, and getting ready to make Kuching shine!", cta: "Follow Our Page", objective: "Humanize Brand", status: "Planned" },
+            { date: "2026-08-17", pillar: "Educational", topic: "DIY Window Cleaning Mistake", format: "Carousel", visual: "Slide showing someone wiping windows in circles (crossed out) vs S-pattern (approved).", asset: "Canva Illustration", hook: "Are you cleaning your windows wrong?", caption: "Stop doing circles! The S-pattern technique prevents streaks and saves time. Swipe to learn how pros do it.", cta: "Share with Friends", objective: "Value Addition", status: "Planned" },
+            { date: "2026-08-18", pillar: "Social Proof", topic: "Google Review Milestone", format: "Single Image", visual: "Celebratory graphic showing '50+ 5-Star Reviews' with some star icons.", asset: "Canva Illustration", hook: "We couldn't have done it without you!", caption: "Thank you Kuching for rating us 5 stars! Your trust motivates us to keep raising our cleaning standards.", cta: "Follow Our Page", objective: "Authority", status: "Planned" },
+            { date: "2026-08-19", pillar: "Before & After", topic: "Moldy Bathroom Grout", format: "Reels", visual: "Close up of scrubbing tool removing black mold from white grout lines. Highly satisfying.", asset: "Need New Video", hook: "Gross to gleaming in 15 seconds.", caption: "Bathroom grout acts like a sponge for dirt and mold. Watch us restore these tiles to their original color.", cta: "Book Now", objective: "Showcase Capability", status: "Planned" },
+            { date: "2026-08-20", pillar: "Trust", topic: "Our Quality Guarantee", format: "Carousel", visual: "Text-based carousel explaining the 24-hour reclean guarantee.", asset: "Canva Illustration", hook: "What happens if you're not satisfied?", caption: "We are human, and sometimes we miss a spot. But with our 24-hour guarantee, we'll come back and fix it for free.", cta: "Save this Post", objective: "Risk Reversal", status: "Planned" },
+            { date: "2026-08-21", pillar: "Educational", topic: "How Often Should You Deep Clean?", format: "Single Image", visual: "A simple checklist timeline (Weekly, Monthly, Bi-Annually).", asset: "Canva Illustration", hook: "Are you cleaning too much or too little?", caption: "A quick guide on when to do light maintenance vs when to call the pros for a deep clean.", cta: "Save this Post", objective: "Educate", status: "Planned" },
+            { date: "2026-08-22", pillar: "Trust", topic: "Equipment Spotlight: HEPA Vacuums", format: "Reels", visual: "Cleaner demonstrating the vacuum, showing the filter, and vacuuming a rug.", asset: "Need New Video", hook: "Why our vacuums cost more than standard ones.", caption: "HEPA filters trap 99.9% of particles. We don't just pick up dirt; we improve your indoor air quality.", cta: "Follow Our Page", objective: "Authority", status: "Planned" },
+            { date: "2026-08-23", pillar: "Social Proof", topic: "User Generated Content - Client tagging us", format: "Single Image", visual: "Screenshot or repost of a client's IG story praising our work.", asset: "Logo Only", hook: "Nothing makes us happier than seeing these tags.", caption: "We love seeing you enjoy your freshly cleaned spaces! Don't forget to tag us in your sparkling homes.", cta: "Comment Below", objective: "Build Trust", status: "Planned" },
+            { date: "2026-08-24", pillar: "Promotion", topic: "Refer a Friend Program Launch", format: "Carousel", visual: "Slide 1: Promo announcement. Slide 2: How it works. Slide 3: Benefits for both.", asset: "Canva Illustration", hook: "Love our service? Get rewarded for sharing!", caption: "Introduce us to a friend and you both get RM50 off your next cleaning session. Swipe for details.", cta: "Share with Friends", objective: "Viral/Growth", status: "Planned" },
+            { date: "2026-08-25", pillar: "Educational", topic: "Decluttering before the Cleaners Arrive", format: "Reels", visual: "Fast motion of picking up toys/clothes before the cleaning team starts.", asset: "Need New Video", hook: "Should you clean before the cleaner arrives?", caption: "You don't need to clean, but decluttering surfaces helps us focus 100% of our time on scrubbing and sanitizing!", cta: "Save this Post", objective: "Client Education", status: "Planned" },
+            { date: "2026-08-26", pillar: "Before & After", topic: "Balcony / Patio Power Washing", format: "Single Image", visual: "Split image of a mossy outdoor tile vs clean bright tile.", asset: "Existing Before After", hook: "Is your balcony ready for the weekend?", caption: "Our high-pressure washing service removes months of grime and moss buildup in minutes.", cta: "WhatsApp Us", objective: "Niche Service", status: "Planned" },
+            { date: "2026-08-27", pillar: "Trust", topic: "Color-Coded Cleaning System", format: "Carousel", visual: "Graphics showing Red=Toilet, Blue=Glass, Yellow=Kitchen, Green=Dusting.", asset: "Canva Illustration", hook: "Why we use 4 different colored cloths.", caption: "Cross-contamination is a big no for us. We strictly use a color-coded system so the cloth used on your toilet never touches your kitchen counter.", cta: "Follow Our Page", objective: "Authority", status: "Planned" },
+            { date: "2026-08-28", pillar: "Educational", topic: "Signs Your Mattress Needs Cleaning", format: "Single Image", visual: "Listicle graphic overlay on a bed image (allergies, odors, yellow stains).", asset: "Canva Illustration", hook: "Waking up with a stuffy nose?", caption: "If you're experiencing allergies only in the morning, your mattress might be harboring dust mites. Time for an extraction!", cta: "Book Now", objective: "Awareness", status: "Planned" },
+            { date: "2026-08-29", pillar: "Social Proof", topic: "Video Testimonial", format: "Reels", visual: "Short clip of a happy client talking about our reliability.", asset: "Need New Video", hook: "Hear it directly from Mrs. Wong.", caption: "Consistency is why clients stay with us for years. Thank you Mrs. Wong for the kind words!", cta: "WhatsApp Us", objective: "Conversion", status: "Planned" },
+            { date: "2026-08-30", pillar: "Trust", topic: "Monthly Wrap Up & Thank You", format: "Carousel", visual: "Photos of the team working throughout the month, statistics (homes cleaned).", asset: "Existing Team Photo", hook: "August was incredible. Thank you, Kuching!", caption: "This month we cleaned over 120 homes and offices. We are so grateful for your continued trust in SSE Cleaning.", cta: "Comment Below", objective: "Brand Loyalty", status: "Planned" },
+            { date: "2026-08-31", pillar: "Educational", topic: "Merdeka Day Special Message", format: "Single Image", visual: "Patriotic aesthetic, Malaysian flag colors subtly integrated with cleaning theme.", asset: "Canva Illustration", hook: "Selamat Hari Merdeka!", caption: "Wishing all Malaysians a Happy Independence Day. Enjoy the public holiday while we keep your spaces clean!", cta: "Follow Our Page", objective: "Community", status: "Planned" }
+        ];
+
+        // FORCE ALL STATUSES TO 'PLANNED' as per user request
+        contentData.forEach(item => {
+            item.status = 'Planned';
+        });
+
+        // Helper Functions
+        function getPillarClass(pillar) {
+            return `pillar-${pillar.replace(/ & | /g, '')}`;
+        }
+
+        function getStatusClass(status) {
+            return `status-${status}`;
+        }
+
+        // --- RENDER FUNCTIONS ---
+        
+        function renderCalendar() {
+            const grid = document.querySelector('.calendar-grid');
+            
+            // Clear existing days but keep headers
+            const headers = Array.from(grid.querySelectorAll('.calendar-day-header')).map(el => el.outerHTML).join('');
+            grid.innerHTML = headers;
+            
+            // August 2026 starts on a Saturday (Day index 6)
+            const startDayOffset = 6; 
+            
+            // Add empty blocks for offset
+            for(let i=0; i<startDayOffset; i++) {
+                grid.innerHTML += `<div class="calendar-day empty"></div>`;
+            }
+
+            // Add actual days
+            contentData.forEach((item, index) => {
+                const dayNum = index + 1;
+                const pillarClass = getPillarClass(item.pillar);
+                
+                const cardHtml = `
+                    <div class="calendar-day" onclick="openModal('${item.date}')">
+                        <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+                            <span class="day-number">${dayNum}</span>
+                            <span class="badge ${pillarClass}" style="font-size: 0.6rem; padding: 0.15rem 0.4rem;">${item.pillar}</span>
+                        </div>
+                        <div class="day-content">
+                            <div class="day-topic">${item.topic}</div>
+                            <div class="day-format">${item.format} • ${item.status}</div>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += cardHtml;
+            });
+        }
+
+        function renderTable(dataToRender) {
+            const tbody = document.querySelector('#plannerTable tbody');
+            tbody.innerHTML = '';
+
+            dataToRender.forEach(item => {
+                const dateObj = new Date(item.date);
+                const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const pillarClass = getPillarClass(item.pillar);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="col-date">${formattedDate}</td>
+                    <td><span class="badge ${pillarClass}">${item.pillar}</span></td>
+                    <td style="font-size: 0.75rem; font-weight: 500;">${item.format}</td>
+                    <td>
+                        <div class="col-topic">${item.topic}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; margin-top: 0.25rem;">"${item.hook}"</div>
+                    </td>
+                    <td class="col-visual">
+                        <div style="margin-bottom: 0.5rem;">${item.visual}</div>
+                        <span class="badge" style="background: #F1F5F9; color: #475569; font-weight: 500;">Asset: ${item.asset}</span>
+                    </td>
+                    <td class="col-caption">
+                        <div style="margin-bottom: 0.5rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${item.caption}</div>
+                        <div><strong style="font-size: 0.75rem; color: var(--primary);">CTA:</strong> <span style="font-size: 0.75rem;">${item.cta}</span></div>
+                    </td>
+                    <td>
+                        <select class="badge status-select ${getStatusClass(item.status)}" onchange="updateStatus('${item.date}', this.value, this)">
+                            <option value="Planned" ${item.status === 'Planned' ? 'selected' : ''}>Planned</option>
+                            <option value="Drafting" ${item.status === 'Drafting' ? 'selected' : ''}>Drafting</option>
+                            <option value="Designing" ${item.status === 'Designing' ? 'selected' : ''}>Designing</option>
+                            <option value="Scheduled" ${item.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                            <option value="Published" ${item.status === 'Published' ? 'selected' : ''}>Published</option>
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- INTERACTIVE FUNCTIONS ---
+
+        function openModal(dateStr) {
+            const item = contentData.find(d => d.date === dateStr);
+            if (!item) return;
+
+            const dateObj = new Date(item.date);
+            document.getElementById('modal-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            
+            const pillarBadge = document.getElementById('modal-pillar');
+            pillarBadge.textContent = item.pillar;
+            pillarBadge.className = `badge ${getPillarClass(item.pillar)}`;
+
+            document.getElementById('modal-topic').textContent = item.topic;
+            document.getElementById('modal-format').textContent = item.format;
+            document.getElementById('modal-hook').textContent = `"${item.hook}"`;
+            document.getElementById('modal-visual').textContent = item.visual;
+            document.getElementById('modal-caption').textContent = item.caption;
+            document.getElementById('modal-cta').textContent = item.cta;
+            document.getElementById('modal-asset').textContent = item.asset;
+            document.getElementById('modal-objective').textContent = item.objective;
+
+            const statusBadge = document.getElementById('modal-status');
+            statusBadge.innerHTML = `<span class="badge ${getStatusClass(item.status)}">${item.status}</span>`;
+
+            document.getElementById('content-modal').classList.add('show');
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeModal(event) {
+            if (!event || event.target.id === 'content-modal' || event.currentTarget.className === 'modal-close') {
+                document.getElementById('content-modal').classList.remove('show');
+                document.body.style.overflow = ''; 
+            }
+        }
+
+        function updateStatus(dateStr, newStatus, selectElement) {
+            const itemIndex = contentData.findIndex(d => d.date === dateStr);
+            if (itemIndex > -1) {
+                contentData[itemIndex].status = newStatus;
+                selectElement.className = `badge status-select ${getStatusClass(newStatus)}`;
+                renderCalendar(); // Sync to calendar view
+            }
+        }
+
+        // Filter Logic
+        function handleFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const pillarFilter = document.getElementById('pillarFilter').value;
+            const formatFilter = document.getElementById('formatFilter').value;
+
+            const filteredData = contentData.filter(item => {
+                const matchesSearch = item.topic.toLowerCase().includes(searchTerm) || item.caption.toLowerCase().includes(searchTerm);
+                const matchesPillar = pillarFilter === 'all' || item.pillar === pillarFilter;
+                const matchesFormat = formatFilter === 'all' || item.format === formatFilter;
+
+                return matchesSearch && matchesPillar && matchesFormat;
+            });
+
+            renderTable(filteredData);
+        }
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalendar();
+            renderTable(contentData);
+
+            // Add Event Listeners for filters
+            document.getElementById('searchInput').addEventListener('input', handleFilters);
+            document.getElementById('pillarFilter').addEventListener('change', handleFilters);
+            document.getElementById('formatFilter').addEventListener('change', handleFilters);
+        });
+    </script>
+</body>
+</html>
